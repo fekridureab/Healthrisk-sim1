@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>HealthRisk Sim — Case 1: Operational Risk | HCMT3006 UDST</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#F4F6FA;color:#0A1628;min-height:100vh}
+#loginView{position:fixed;inset:0;background:#002A5C;display:flex;align-items:center;justify-content:center;padding:16px;z-index:999}
+.lcard{background:#fff;border-radius:14px;padding:28px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.lcard h1{font-size:22px;color:#002A5C;margin-bottom:2px;font-weight:700}
+.lcasebadge{display:inline-block;font-size:11px;background:#EBF2FB;color:#0C447C;padding:3px 10px;border-radius:4px;font-weight:700;margin-bottom:10px}
+.lsub{font-size:12px;color:#6B7A8D;margin-bottom:18px;line-height:1.55}
+.rtabs{display:flex;border:2px solid #002A5C;border-radius:8px;overflow:hidden;margin-bottom:16px}
+.rtab{flex:1;padding:9px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;background:#F4F6FA;color:#6B7A8D;border:none;font-family:Arial,sans-serif}
+.rtab.on{background:#002A5C;color:#fff}
+.fg{margin-bottom:12px}
+.fg label{display:block;font-size:11px;font-weight:700;color:#002A5C;margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em}
+.fg input,.fg select{width:100%;padding:10px 12px;border:2px solid #ddd;border-radius:7px;font-size:14px;font-family:Arial,sans-serif;color:#0A1628;background:#F4F6FA}
+.fg input:focus,.fg select:focus{outline:none;border-color:#00AEEF;background:#fff}
+.lbtn{width:100%;padding:12px;background:#002A5C;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;font-family:Arial,sans-serif}
+.lbtn:hover{background:#003A7A}
+.lerr{color:#C0392B;font-size:12px;margin-top:8px;text-align:center;display:none;font-weight:700;padding:8px;background:#FCEBEB;border-radius:6px;border:1px solid #F7C1C1}
+.lnote{font-size:11px;color:#6B7A8D;margin-top:10px;text-align:center;line-height:1.55}
+.id-locked-note{background:#E1F5EE;border:1px solid #1A7A4A;border-radius:6px;padding:8px 11px;font-size:12px;color:#085041;margin-top:6px;display:none}
+#mainView{display:none}
+.hdr{background:#002A5C;padding:11px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.hdr-t{color:#00AEEF;font-size:15px;font-weight:700}
+.hdr-s{color:rgba(255,255,255,.4);font-size:10px}
+.hdr-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rbadge{font-size:10px;padding:3px 10px;border-radius:100px;background:rgba(0,174,239,.15);color:#00AEEF;border:1px solid rgba(0,174,239,.3)}
+.casebadge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;background:#00AEEF;color:#002A5C}
+.ibadge{background:#C8A951;color:#002A5C;font-size:10px;font-weight:700;padding:2px 9px;border-radius:4px;display:none}
+.hdr-u{font-size:11px;color:rgba(255,255,255,.5)}
+.nav{background:#fff;border-bottom:2px solid #E0E4EA;display:flex;padding:0 14px;overflow-x:auto}
+.nt{font-size:12px;font-weight:700;padding:11px 13px;color:#6B7A8D;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none;font-family:Arial,sans-serif}
+.nt:hover{color:#002A5C}
+.nt.on{color:#002A5C;border-bottom-color:#00AEEF}
+.pg{display:none;padding:16px 18px;max-width:940px;margin:0 auto}
+.pg.on{display:block}
+.sbox{background:#002A5C;border-radius:10px;padding:18px;color:#fff;margin-bottom:14px}
+.sbox h2{color:#00AEEF;font-size:16px;margin-bottom:4px}
+.sdt{font-size:10px;color:rgba(255,255,255,.4);margin-bottom:9px;font-family:monospace}
+.sbox p{font-size:13px;line-height:1.75;color:rgba(255,255,255,.85)}
+.sbox p+p{margin-top:8px}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(95px,1fr));gap:8px;margin-top:12px}
+.fact{background:rgba(255,255,255,.08);border-radius:7px;padding:9px;text-align:center}
+.fn{font-size:16px;font-weight:700;color:#00AEEF}
+.fn.r{color:#F09595}.fn.a{color:#FAC775}.fn.g{color:#9FE1CB}
+.fl{font-size:10px;color:rgba(255,255,255,.5);margin-top:2px}
+.asb{background:#EBF2FB;border-radius:8px;padding:9px 13px;font-size:12px;color:#0C447C;line-height:1.6;margin-top:11px}
+.round-locked{background:#FFF3CD;border:2px solid #FAC775;border-radius:10px;padding:20px;text-align:center;margin:20px 0}
+.round-locked h3{color:#854F0B;font-size:16px;margin-bottom:6px}
+.round-locked p{font-size:13px;color:#633806;line-height:1.6}
+.situation-box{background:#1A3A5C;border-radius:9px;padding:13px 15px;color:#fff;margin-bottom:13px;border-left:4px solid #00AEEF}
+.situation-box h4{color:#00AEEF;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.situation-box p{font-size:13px;line-height:1.65;color:rgba(255,255,255,.88)}
+.qcard{background:#fff;border:2px solid #E0E4EA;border-radius:9px;padding:13px;margin-bottom:9px}
+.ql{font-size:10px;color:#00AEEF;font-weight:700;margin-bottom:5px;text-transform:uppercase}
+.qt{font-size:13px;font-weight:700;color:#002A5C;line-height:1.45;margin-bottom:9px}
+.qhint{font-size:11px;color:#6B7A8D;font-style:italic;margin-bottom:8px;line-height:1.5}
+.opt{display:flex;align-items:flex-start;gap:8px;padding:9px 11px;border-radius:7px;border:2px solid #E0E4EA;cursor:pointer;font-size:12px;line-height:1.55;color:#0A1628;margin-bottom:5px;background:#fff;transition:all .1s}
+.opt:hover{background:#EBF2FB;border-color:#B5D4F4}
+.opt.sel{background:#E1F5EE;border-color:#1A7A4A}
+.opt.sel .ol{background:#1A7A4A;color:#fff}
+.ol{width:22px;height:22px;border-radius:4px;background:#F4F6FA;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;color:#6B7A8D}
+.reflection-box{background:#fff;border:2px solid #00AEEF;border-radius:9px;padding:14px;margin-top:14px}
+.reflection-box h4{color:#002A5C;font-size:13px;font-weight:700;margin-bottom:10px;border-bottom:1px solid #E0E4EA;padding-bottom:6px}
+.rq{margin-bottom:12px}
+.rq label{display:block;font-size:12px;font-weight:700;color:#002A5C;margin-bottom:5px}
+.rq textarea{width:100%;border:1px solid #ddd;border-radius:7px;padding:9px 11px;font-size:13px;font-family:Arial,sans-serif;color:#0A1628;resize:vertical;min-height:65px;background:#F4F6FA}
+.rq textarea:focus{outline:none;border-color:#00AEEF;background:#fff}
+.btn{padding:9px 18px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:Arial,sans-serif}
+.btn-p{background:#002A5C;color:#fff}.btn-p:disabled{opacity:.35;cursor:not-allowed}
+.btn-c{background:#00AEEF;color:#002A5C}
+.btn-o{background:#fff;color:#002A5C;border:2px solid #E0E4EA}
+.btn-r{background:#FCEBEB;color:#C0392B;border:2px solid #F7C1C1}
+.ok{background:#E1F5EE;border:2px solid #1A7A4A;border-radius:9px;padding:15px;text-align:center;margin-bottom:12px}
+.ok h3{color:#1A7A4A;font-size:15px}.ok p{font-size:12px;color:#085041;margin-top:3px}
+.pbar{display:flex;align-items:center;gap:7px;padding:8px 11px;background:#F4F6FA;border-radius:7px;margin-bottom:11px;font-size:12px;color:#6B7A8D}
+.dot{width:9px;height:9px;border-radius:50%}
+.dr{background:#E24B4A}.da{background:#EF9F27}.dg{background:#1D9E75}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px;margin-bottom:13px}
+.mc{border:2px solid #E0E4EA;border-radius:8px;padding:10px;background:#fff}
+.mn{font-size:12px;font-weight:700;color:#002A5C;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.av{width:22px;height:22px;border-radius:50%;background:#002A5C;color:#00AEEF;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mar{display:flex;align-items:center;gap:4px;margin-bottom:3px}
+.mq{font-size:10px;color:#6B7A8D;min-width:16px}
+.mv{font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px}
+.vA{background:#EDE7F6;color:#3B1A6B}.vB{background:#EBF2FB;color:#0C447C}.vC{background:#E1F5EE;color:#085041}.vD{background:#FFF3CD;color:#633806}.vn{background:#F4F6FA;color:#6B7A8D}
+.card{background:#fff;border:2px solid #E0E4EA;border-radius:9px;overflow:hidden;margin-bottom:13px}
+.ch{padding:10px 13px;border-bottom:2px solid #E0E4EA;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px}
+.ch h3{font-size:13px;font-weight:700;color:#002A5C}
+.cb{padding:12px 13px}
+.db{margin-bottom:8px}
+.db-top{display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px}
+.gdq{background:#F4F6FA;border:2px solid #E0E4EA;border-radius:8px;padding:11px;margin-bottom:10px}
+.gdqt{font-size:12px;font-weight:700;color:#002A5C;margin-bottom:8px;line-height:1.45}
+.gdopts{display:flex;gap:8px;flex-wrap:wrap}
+.gdo input[type=radio]{position:absolute;opacity:0;pointer-events:none;width:0;height:0}
+.gdo label{display:inline-flex;align-items:center;justify-content:center;min-width:44px;font-size:13px;font-weight:700;cursor:pointer;padding:7px 16px;border:2px solid #E0E4EA;border-radius:7px;background:#fff;color:#0A1628;user-select:none;transition:all .1s}
+.gdo label:hover{background:#EBF2FB;border-color:#B5D4F4}
+.gdo input[type=radio]:checked+label{background:#E1F5EE;border-color:#1A7A4A;color:#1A7A4A}
+.met{display:grid;grid-template-columns:repeat(auto-fit,minmax(85px,1fr));gap:8px;margin-bottom:12px}
+.mc2{background:#fff;border:2px solid #E0E4EA;border-radius:8px;padding:10px 12px}
+.mn2{font-size:20px;font-weight:700;color:#002A5C}
+.ml{font-size:10px;color:#6B7A8D;margin-top:1px}
+.mc2.mrd .mn2{color:#C0392B}.mc2.mgr .mn2{color:#1A7A4A}.mc2.mam .mn2{color:#D4860A}
+.rr-wrap{overflow-x:auto;border-radius:8px;border:2px solid #E0E4EA}
+.rrt{width:100%;border-collapse:collapse;font-size:11px;min-width:720px}
+.rrt th{background:#002A5C;color:#fff;padding:8px;text-align:left;font-size:10px;white-space:nowrap}
+.rrt td{padding:7px 8px;border-bottom:1px solid #E0E4EA;vertical-align:middle}
+.rrt tr:hover td{background:#F7F9FC}
+.lx{background:#FCEBEB;color:#C0392B;padding:2px 5px;border-radius:3px;font-size:10px;font-weight:700}
+.lh{background:#FFF3CD;color:#854F0B;padding:2px 5px;border-radius:3px;font-size:10px;font-weight:700}
+.lm{background:#E6F1FB;color:#0C447C;padding:2px 5px;border-radius:3px;font-size:10px;font-weight:700}
+.ll{background:#E1F5EE;color:#1A7A4A;padding:2px 5px;border-radius:3px;font-size:10px;font-weight:700}
+.so{background:#FCEBEB;color:#C0392B;padding:2px 5px;border-radius:3px;font-size:10px}
+.spr{background:#FFF3CD;color:#854F0B;padding:2px 5px;border-radius:3px;font-size:10px}
+.sdn{background:#E1F5EE;color:#1A7A4A;padding:2px 5px;border-radius:3px;font-size:10px}
+.dop{background:#EBF2FB;color:#1A3A6B;padding:2px 5px;border-radius:3px;font-size:10px}
+.dcl{background:#FCEBEB;color:#8B1A1A;padding:2px 5px;border-radius:3px;font-size:10px}
+.dfi{background:#FFF8E1;color:#5C3A00;padding:2px 5px;border-radius:3px;font-size:10px}
+.dlr{background:#EDE7F6;color:#3B1A6B;padding:2px 5px;border-radius:3px;font-size:10px}
+.dhc{background:#E0F5ED;color:#084A3A;padding:2px 5px;border-radius:3px;font-size:10px}
+.dst{background:#E8E4F4;color:#3C1A7A;padding:2px 5px;border-radius:3px;font-size:10px}
+.ri{border:2px solid #00AEEF;border-radius:4px;padding:3px 5px;font-size:11px;background:#EBF2FB;color:#002A5C;font-family:Arial,sans-serif}
+.ex-row td{background:#FFFBEE!important}
+.warn{background:#FFF3CD;border:1px solid #FAC775;border-radius:7px;padding:9px 12px;font-size:12px;color:#633806;margin-bottom:11px}
+.lbr{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:9px;border:2px solid #E0E4EA;background:#fff;margin-bottom:8px}
+.lrk{font-size:22px;font-weight:700;min-width:28px;text-align:center}
+.rk1{color:#C8A951}.rk2{color:#6B7A8D}.rk3{color:#CD7F32}
+.lrn{flex:1;font-size:13px;font-weight:700;color:#002A5C}
+.lrs{font-size:10px;color:#6B7A8D}
+.lrt{font-size:17px;font-weight:700;color:#002A5C}
+.lbb{height:6px;background:#F4F6FA;border-radius:3px;overflow:hidden;width:80px}
+.lbf{height:100%;background:#00AEEF;border-radius:3px}
+.score-box{background:#002A5C;border-radius:9px;padding:14px;color:#fff;margin-top:12px}
+.score-box h3{color:#00AEEF;font-size:14px;margin-bottom:10px}
+.srow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.1);font-size:13px}
+.srow:last-child{border:none}
+.spts{font-size:20px;font-weight:700;color:#00AEEF}
+.ip{background:rgba(0,174,239,.06);border:2px solid rgba(0,174,239,.25);border-radius:9px;padding:13px;margin-bottom:13px}
+.ip h3{font-size:13px;font-weight:700;color:#0C447C;margin-bottom:10px}
+.igc{background:#fff;border:2px solid #E0E4EA;border-radius:8px;padding:11px;margin-bottom:9px}
+.igt{font-size:13px;font-weight:700;color:#002A5C;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px}
+.imr{display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid #E0E4EA;font-size:12px;flex-wrap:wrap}
+.imr:last-child{border:none}
+.ians{display:flex;gap:3px}
+.stit{font-size:15px;font-weight:700;color:#002A5C;margin-bottom:11px}
+.tip{background:#EBF2FB;border-radius:7px;padding:8px 11px;font-size:12px;color:#0C447C;line-height:1.6;margin-top:10px}
+.emp{text-align:center;padding:28px 16px;color:#6B7A8D;font-size:12px}
+.emp h4{font-size:14px;font-weight:700;color:#002A5C;margin-bottom:4px}
+.rbtns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px}
+.student-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #E0E4EA;font-size:12px;flex-wrap:wrap}
+.student-row:last-child{border:none}
+.del-btn{background:none;border:1px solid #F7C1C1;color:#C0392B;cursor:pointer;font-size:12px;font-weight:700;padding:2px 8px;border-radius:4px}
+.del-btn:hover{background:#FCEBEB}
+.group-admin-card{background:#fff;border:2px solid #E0E4EA;border-radius:8px;padding:12px;margin-bottom:10px}
+.group-admin-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px}
+.group-admin-title h4{font-size:13px;font-weight:700;color:#002A5C}
+
+.rpt-ta:focus{outline:none;border-color:#00AEEF;background:#fff;}
+
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginView">
+ <div class="lcard">
+  <h1>HealthRisk Sim</h1>
+  <span class="lcasebadge">Case 1 — Operational Risk</span>
+  <p class="lsub">Al-Rayyan Surgical Centre · Collapsed Supply Chain<br>HCMT3006 · UDST College of Business · Spring 2026</p>
+  <div class="rtabs">
+   <button class="rtab on" id="tabS" onclick="setRole('student')">Student</button>
+   <button class="rtab" id="tabL" onclick="setRole('leader')">Group Leader</button>
+   <button class="rtab" id="tabI" onclick="setRole('instructor')">Instructor</button>
+  </div>
+  <div id="stdFields">
+   <div class="fg"><label>Full Name</label><input type="text" id="iName" placeholder="e.g. Ahmed Al-Mansouri" autocomplete="off"></div>
+   <div class="fg"><label>Student ID</label><input type="text" id="iID" placeholder="e.g. 20220001" autocomplete="off" oninput="checkID(this.value)"></div>
+   <div class="fg" id="groupFg"><label>Group</label>
+    <select id="iGroup">
+     <option value="">— Select your group —</option>
+     <option>Group A</option><option>Group B</option><option>Group C</option><option>Group D</option><option>Group E</option>
+     <option>Group F</option><option>Group G</option><option>Group H</option><option>Group I</option><option>Group J</option>
+    </select>
+   </div>
+   <div class="id-locked-note" id="idLocked">✓ Your Student ID is already registered. You will enter <strong id="lockedGrp"></strong> automatically.</div>
+  </div>
+  <div id="instrFields" style="display:none">
+   <div class="fg"><label>Your Name</label><input type="text" id="iInstrName" placeholder="Dr. Fekri Dureab" autocomplete="off"></div>
+   <div class="fg"><label>Instructor Password</label><input type="password" id="iPW" placeholder="Enter password" autocomplete="off"></div>
+  </div>
+  <div class="lerr" id="lerr"></div>
+  <button class="lbtn" onclick="doLogin()">Enter Simulation</button>
+  <p class="lnote" id="lnote">Your Student ID is permanently linked to your group. Contact your instructor if you need to change groups.</p>
+ </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainView">
+ <div class="hdr">
+  <div>
+   <div class="hdr-t">HealthRisk Sim <span id="iBadge" class="ibadge">INSTRUCTOR</span></div>
+   <div class="hdr-s">HCMT3006 · UDST College of Business</div>
+  </div>
+  <div class="hdr-r">
+   <span class="casebadge">Case 1 — Operational Risk</span>
+   <span class="rbadge" id="hRound">Round 1</span>
+   <span class="hdr-u" id="hUser"></span>
+  </div>
+ </div>
+ <div class="nav">
+  <button class="nt on" onclick="showPg('pgSc',this)">Scenario</button>
+  <button class="nt" onclick="showPg('pgDec',this)" id="ntDec">My Decisions</button>
+  <button class="nt" onclick="showPg('pgGrp',this)" id="ntGrp">Group Dashboard</button>
+  <button class="nt" onclick="showPg('pgRR',this)">Risk Register</button>
+  <button class="nt" id="ntLB" onclick="showPg('pgLB',this)">Leaderboard</button>
+  <button class="nt" onclick="showPg('pgIn',this)" id="ntIn" style="display:none;color:#C8A951">Instructor Panel</button>
+ </div>
+
+ <!-- SCENARIO -->
+ <div id="pgSc" class="pg on">
+  <div class="sbox">
+   <h2>Case 1 — Collapsed Supply Chain: Operational Risk in Action</h2>
+   <div class="sdt">Al-Rayyan Surgical Centre · 150-bed private hospital · Doha, Qatar · January 2026 · ASHRM ERM — Operational Risk Domain</div>
+   <p>Al-Rayyan Surgical Centre performs approximately 4,500 surgeries per year. The hospital relies on a single external supplier for ALL sterile surgical supplies — drapes, gowns, instrument packs, and irrigation fluids. The supplier contract was last reviewed in 2021.</p>
+   <p>On January 15, 2026, your team — the Risk Management Committee — receives an urgent call from the supplier: their manufacturing facility has been damaged by flooding in Southeast Asia. Deliveries are suspended for 6–8 weeks. You have only 4 days of sterile supply stock remaining. 23 elective surgeries are scheduled for next week. The CEO has not been informed yet.</p>
+   <p>Key background: The risk register did NOT include supply chain dependency as a risk before this event. The supplier had one previous delivery failure in 2023 — no corrective action was taken. One patient (Mr. Al-Rashidi, 58) is waiting for urgent cancer surgery on January 20.</p>
+   <div class="facts">
+    <div class="fact"><div class="fn r">4 days</div><div class="fl">Sterile supply left</div></div>
+    <div class="fact"><div class="fn r">0</div><div class="fl">Backup suppliers</div></div>
+    <div class="fact"><div class="fn a">23</div><div class="fl">Surgeries next week</div></div>
+    <div class="fact"><div class="fn a">QAR 2.04M</div><div class="fl">Total financial loss</div></div>
+    <div class="fact"><div class="fn r">78%</div><div class="fl">Nurses had no training</div></div>
+    <div class="fact"><div class="fn g">6–8 wks</div><div class="fl">Supplier blackout</div></div>
+   </div>
+  </div>
+  <div class="asb"><strong>ASHRM Resource:</strong> ASHRM (2020) Enterprise Risk Management — Operational Risk Domain · ISO 31000:2018 · Qatar Law No. 22/2021 · QNV 2030. See <a href="https://www.ashrm.org/resources" target="_blank" style="color:#185FA5">ashrm.org/resources</a></div>
+  <div style="margin-top:14px"><button class="btn btn-c" onclick="showPg('pgDec',document.getElementById('ntDec'))">Start Round 1 decisions &rarr;</button></div>
+ </div>
+
+ <div id="pgDec" class="pg"><div id="decDiv"></div></div>
+
+ <div id="pgGrp" class="pg">
+  <div class="pbar"><div class="dot dr" id="pdot"></div><span id="ptxt">Waiting for members to submit...</span></div>
+  <div class="stit">Group members — individual answers</div>
+  <div class="mgrid" id="mGrid"></div>
+  <div class="card">
+   <div class="ch"><h3>Answer distribution — Question <span id="dqn">1</span></h3>
+    <div><button class="btn btn-o" onclick="pQ()" style="padding:4px 8px;font-size:11px;margin-right:4px">&lsaquo;</button><button class="btn btn-o" onclick="nQ()" style="padding:4px 8px;font-size:11px">&rsaquo;</button></div>
+   </div>
+   <div class="cb" id="distDiv"></div>
+  </div>
+  <div class="card">
+   <div class="ch"><h3>Group decision submission</h3><span style="font-size:10px;background:#FFF3CD;color:#854F0B;padding:2px 7px;border-radius:4px;font-weight:700">Leader &amp; Instructor only</span></div>
+   <div class="cb" id="gdDiv"></div>
+  </div>
+  <div id="scDiv"></div>
+  <div id="reportSection" style="display:none"></div>
+ </div>
+
+ <div id="pgRR" class="pg">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;flex-wrap:wrap;gap:8px">
+   <div class="stit" style="margin:0">Risk Register — <span id="rrGrp"></span></div>
+   <div style="display:flex;gap:7px;flex-wrap:wrap">
+    <button class="btn btn-o" onclick="addRow()" style="font-size:12px;padding:7px 11px">+ Add risk</button>
+    <button class="btn btn-c" onclick="saveRR()" style="font-size:12px;padding:7px 11px" id="saveBtn">Save register</button>
+   </div>
+  </div>
+  <div class="warn"><strong>Your task:</strong> Identify the Operational, Clinical, Financial, Legal/Regulatory, and Human Capital risks from Case 1. Add each risk to this register. The yellow row is an EXAMPLE only — do not delete it. Click <strong>Edit</strong> on rows you add.</div>
+  <div class="met" id="rrMet"></div>
+  <div class="rr-wrap"><table class="rrt">
+   <thead><tr><th>ID</th><th>ASHRM Domain</th><th>Risk Name</th><th>L(1-5)</th><th>C(1-5)</th><th>RPN</th><th>Level</th><th>Mitigation Action</th><th>Res.L</th><th>Res.C</th><th>Residual</th><th>Status</th><th>Owner</th><th>Action</th></tr></thead>
+   <tbody id="rrBody"></tbody>
+  </table></div>
+  <div class="asb" style="margin-top:11px"><strong>ASHRM ERM Domains:</strong> Operational · Clinical/Patient Safety · Financial · Legal/Regulatory · Human Capital &nbsp;|&nbsp; <strong>L×C=RPN:</strong> 15–25 EXTREME · 10–14 HIGH · 5–9 MEDIUM · 1–4 LOW</div>
+ </div>
+
+ <div id="pgLB" class="pg">
+  <div class="stit">Leaderboard — Round <span id="lbR">1</span></div>
+  <div class="met" id="lbMet"></div>
+  <div id="lbDiv"></div>
+  <div class="tip"><strong>Scoring:</strong> Best decision +10 · Good +7 · Acceptable +4 · Wrong 0 · Harmful −5 · Risk Register quality bonus up to +10 pts per round</div>
+ </div>
+
+ <div id="pgIn" class="pg">
+  <div class="warn"><strong>Instructor view only.</strong> Students cannot see this panel.</div>
+  <div class="ip">
+   <h3>Round Control — Unlock rounds for students</h3>
+   <div style="font-size:13px;margin-bottom:9px">Currently open: <strong id="iRnd">Round 1</strong> &nbsp;·&nbsp; Students cannot access a round until you open it here.</div>
+   <div class="rbtns">
+    <button class="btn btn-p" onclick="openRound(1)" style="font-size:12px">Open Round 1</button>
+    <button class="btn btn-o" onclick="openRound(2)" style="font-size:12px">Open Round 2</button>
+    <button class="btn btn-o" onclick="openRound(3)" style="font-size:12px">Open Round 3</button>
+    <button class="btn btn-o" onclick="openRound(4)" style="font-size:12px">Open Round 4</button>
+    <button class="btn btn-o" onclick="openRound(5)" style="font-size:12px">Open Round 5</button>
+   </div>
+  </div>
+  <div class="ip">
+   <h3>Student &amp; Group Management</h3>
+   <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+    <button class="btn btn-r" onclick="deleteAll()" style="font-size:12px">⚠ Reset ALL data</button>
+    <button class="btn btn-o" onclick="renderIn()" style="font-size:12px">Refresh</button>
+   </div>
+   <div id="adminGroups"></div>
+  </div>
+  <div class="ip">
+   <h3>All groups — submissions &amp; decisions (Round <span id="iRndD">1</span>)</h3>
+   <div id="iGroups"></div>
+  </div>
+  <div class="ip">
+   <h3>Answer key — Round <span id="iAKR">1</span> (Instructor only)</h3>
+   <div id="iAK"></div>
+  </div>
+ </div>
+</div>
+
+<script>
+
+// ── FIREBASE CONFIG ─────────────────────────────────────────
+var FBCFG={
+  apiKey:"AIzaSyBa8eZth9lNSqIZHqKsqk94Qd7uwFiXZ8s",
+  authDomain:"simulation-evaluation.firebaseapp.com",
+  databaseURL:"https://simulation-evaluation-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"simulation-evaluation",
+  storageBucket:"simulation-evaluation.firebasestorage.app",
+  messagingSenderId:"506428308692",
+  appId:"1:506428308692:web:5ddf69fd3a5eff70f38f41"
+};
+var db=null;var fbReady=false;
+
+// Sanitise localStorage keys for Firebase paths (spaces not allowed in FB keys)
+function fbk(k){return k.replace(/ /g,'__');}
+function fbkr(k){return k.replace(/__/g,' ');}
+
+function initFirebase(){
+  try{
+    firebase.initializeApp(FBCFG);
+    db=firebase.database();fbReady=true;
+    // One-time load: pull all c1 data from Firebase into localStorage on join
+    db.ref('c1').once('value',function(snap){
+      var d=snap.val()||{};
+      Object.keys(d).forEach(function(k){
+        try{localStorage.setItem('c1_'+fbkr(k),JSON.stringify(d[k]));}catch(e){}
+      });
+      if(d.cur_round){
+        curRound=d.cur_round;
+        var el=document.getElementById('hRound');if(el)el.textContent='Round '+curRound;
+        var el2=document.getElementById('iRnd');if(el2)el2.textContent='Round '+curRound;
+        var el3=document.getElementById('iRndD');if(el3)el3.textContent=curRound;
+      }
+      safeRender();
+    });
+    // Real-time listener: fires whenever ANY student/leader writes data
+    db.ref('c1').on('value',function(snap){
+      var d=snap.val()||{};
+      Object.keys(d).forEach(function(k){
+        var origKey=fbkr(k);var val=d[k];
+        // Firebase converts JS arrays to {0:...,1:...} — convert back
+        if(val&&!Array.isArray(val)&&typeof val==='object'){
+          var ks=Object.keys(val);
+          if(ks.length>0&&!isNaN(parseInt(ks[0]))){val=Object.values(val);}
+        }
+        try{localStorage.setItem('c1_'+origKey,JSON.stringify(val));}catch(e){}
+      });
+      // Sync round to non-instructor users
+      if(d.cur_round&&ROLE!=='instructor'){
+        if(curRound!==d.cur_round){
+          curRound=d.cur_round;
+          var el=document.getElementById('hRound');if(el)el.textContent='Round '+curRound;
+          var el2=document.getElementById('iRnd');if(el2)el2.textContent='Round '+curRound;
+        }
+      }
+      safeRender();
+    });
+  }catch(e){console.error('Firebase init error:',e);}
+}
+
+// Safe render: only re-renders panels that currently exist in the DOM
+function safeRender(){
+  // Refresh instructor panel
+  if(document.getElementById('adminGroups')||document.getElementById('iGroups')){
+    try{renderIn();}catch(e){}
+  }
+  // Refresh leaderboard (leader and instructor)
+  if(document.getElementById('lbDiv')&&(ROLE==='leader'||ROLE==='instructor')){
+    try{renderLB();}catch(e){}
+  }
+  // Refresh group dashboard (leader only)
+  if(document.getElementById('mGrid')&&ROLE==='leader'){
+    try{renderGrpPartial();renderSc();}catch(e){}
+  }
+}
+
+var PW='UDST2026';
+var ROLE='student';
+var user={name:'',id:'',group:'',role:''};
+var curRound=1;
+var myAns={};
+var myRef={r1:'',r2:''};
+var submitted=false;
+var rrRows=[];
+var editIdx=null;
+var viewQ=1;
+var gdRendered=false;
+var ALL_GROUPS=['Group A','Group B','Group C','Group D','Group E','Group F','Group G','Group H','Group I','Group J'];
+
+// ── QUESTIONS — correct answers varied across A B C D ──────────
+var RD={
+ 1:{
+  title:"Round 1 — Risk Identification",
+  ashrm:"ASHRM ERM — Operational Domain · Chapter 3: Operational Risk — Supply Chain",
+  situation:"Date: January 15, 2026 — 09:00 AM. Your team just received a phone call from your sole sterile supply vendor. Their factory in Southeast Asia was destroyed by flooding. All deliveries are suspended for 6–8 weeks. The supply chain manager is on annual leave — his deputy has no authority to activate emergency protocols. A quick check shows you have 4 days of surgical supply stock remaining. 23 elective surgeries are scheduled for next week. The CEO has not been informed yet.",
+  qs:[
+   {q:"Who do you notify FIRST?",bloom:"Apply",
+    hint:"Risk managers must know the correct escalation pathway. Consider patient safety, authority to act, and urgency.",
+    o:{A:"Escalate immediately to the CEO and Hospital Director — this is an operational emergency requiring executive authority.",B:"Notify the Theatre Manager first — they are directly affected and need to prepare.",C:"Contact the Finance Department — they control emergency procurement budgets.",D:"Wait for the supply chain manager to return from annual leave — he owns this problem."},
+    p:{A:10,B:7,C:4,D:0},a:'A'},
+   {q:"What do you add to the Risk Register RIGHT NOW?",bloom:"Apply",
+    hint:"The ASHRM ERM Framework requires that identified risks be formally recorded.",
+    o:{A:"Add only: Flooding Event (Hazard Risk) — because flooding caused the problem.",B:"Add: All hospital supply risks — do a full review of all procurement contracts.",C:"Nothing yet. Wait to see if the situation resolves before adding to the register.",D:"Add: Single Supplier Dependency (Operational Risk) + Supply Chain Disruption (Operational Risk) — both with HIGH likelihood and CRITICAL consequence."},
+    p:{A:4,B:7,C:0,D:10},a:'D'},
+   {q:"Which ASHRM ERM risk domain is this crisis PRIMARILY classified under?",bloom:"Understand",
+    hint:"ASHRM ERM identifies 8 domains. Choosing the right domain guides which tools and resources you use.",
+    o:{A:"Operational Risk — failure of internal process (single supplier dependency, no Business Continuity Plan).",B:"Hazard Risk — the flooding is the primary cause.",C:"Financial Risk — the financial impact on surgical revenue is the main concern.",D:"Strategic Risk — the hospital's reputation is the primary concern."},
+    p:{A:10,B:7,C:4,D:4},a:'A'},
+   {q:"What risk identification tool do you use FIRST?",bloom:"Apply",
+    hint:"Different tools are appropriate at different stages. What is most useful right now, at the moment of discovery?",
+    o:{A:"Root Cause Analysis (RCA) — to find out why the supplier failed.",B:"Risk Register update + SWOT Analysis of current supplier dependency — to identify all related vulnerabilities immediately.",C:"Failure Mode and Effects Analysis (FMEA) — to analyse what could go wrong in the surgical process.",D:"Risk Matrix — to plot all hospital risks simultaneously."},
+    p:{A:4,B:10,C:7,D:4},a:'B'},
+   {q:"What action do you take about your current stock levels?",bloom:"Evaluate",
+    hint:"You know stock is low, but not exactly how low. What is your immediate action?",
+    o:{A:"Ask the Theatre Manager to estimate stock levels based on memory.",B:"Trust the supplier's statement and begin cancelling all surgeries immediately.",C:"Conduct an immediate physical audit of ALL sterile supply stock across all departments — get exact numbers within 2 hours.",D:"Wait until tomorrow morning — stock audit is a routine task that follows normal schedule."},
+    p:{A:4,B:4,C:10,D:-5},a:'C'},
+  ]},
+ 2:{
+  title:"Round 2 — Risk Assessment",
+  ashrm:"ASHRM ERM — Clinical/Patient Safety Domain",
+  situation:"Date: January 16–17, 2026. Stock audit confirmed: 4 days of sterile supply remaining. Theatre schedule: 23 elective surgeries next week + 4 emergency cases that cannot be postponed. One patient, Mr. Al-Rashidi (58 years old), is waiting for urgent cancer surgery scheduled January 20. The CEO has been briefed. No backup supplier has been found yet. Two staff members report they have no training on emergency supply procedures.",
+  qs:[
+   {q:"What risk assessment tool do you use to evaluate the supply chain risk?",bloom:"Apply",
+    hint:"Risk assessment requires a formal method. Which tool gives you the most complete picture right now?",
+    o:{A:"5×5 Risk Matrix (Likelihood × Consequence) + Risk Priority Number (RPN) scoring for top risks — gives a structured, defensible assessment.",B:"Qualitative description only — write a paragraph summarising the risk for the CEO.",C:"Financial analysis only — calculate the cost of cancelled surgeries.",D:"No formal tool needed — the risk is obvious and everyone understands it."},
+    p:{A:10,B:4,C:4,D:-5},a:'A'},
+   {q:"How do you rate the LIKELIHOOD of patient harm if no action is taken?",bloom:"Evaluate",
+    hint:"Use the ASHRM 5-point likelihood scale: 1=Rare, 2=Unlikely, 3=Possible, 4=Likely, 5=Almost Certain.",
+    o:{A:"Likelihood 3 — Possible. There is a chance the supplier resolves the issue quickly.",B:"Likelihood 2 — Unlikely. The hospital has handled disruptions before without patient harm.",C:"Likelihood 5 — Almost Certain. With 4 days of stock and no backup supplier, patient harm from postponed or unsafe surgeries is virtually certain.",D:"Likelihood 1 — Rare. Supply chain disruptions do not usually cause patient harm in modern hospitals."},
+    p:{A:7,B:0,C:10,D:-5},a:'C'},
+   {q:"What risk level do you assign to Mr. Al-Rashidi (58 years old) waiting for urgent cancer surgery on January 20?",bloom:"Evaluate",
+    hint:"Consequence of delay for this patient is disease progression. How do you classify this risk?",
+    o:{A:"CRITICAL / EXTREME risk — delay in cancer surgery directly causes irreversible patient harm. This patient must be escalated to the highest priority immediately.",B:"HIGH risk — cancer surgery is important, but he can wait another 2 weeks safely.",C:"MEDIUM risk — cancer is serious but not an emergency requiring immediate escalation.",D:"LOW risk — elective cancer surgery can be rescheduled without significant consequence."},
+    p:{A:10,B:4,C:0,D:-5},a:'A'},
+   {q:"How do you prioritise which surgeries proceed with the remaining 4 days of supplies?",bloom:"Evaluate",
+    hint:"You cannot perform all 27 scheduled surgeries. Apply clinical and ethical risk management principles.",
+    o:{A:"Equal priority for all patients — a lottery system is the fairest approach.",B:"Prioritise elective surgeries that generate the most revenue — protecting hospital finances protects jobs.",C:"Cancel all surgeries immediately — zero risk is the safest approach.",D:"Clinical priority order: (1) Life-threatening emergencies, (2) Urgent cases including cancer, (3) Semi-urgent cases, (4) Elective cases postponed. Document each decision with clinical justification."},
+    p:{A:-5,B:0,C:4,D:10},a:'D'},
+   {q:"Do you conduct a Failure Mode and Effects Analysis (FMEA) on the improvised surgical draping process?",bloom:"Apply",
+    hint:"Emergency cases proceed with improvised draping. The scrub nurse has documented a contamination risk.",
+    o:{A:"Yes — immediately conduct FMEA on the improvised draping procedure, identify all failure modes, assess RPN for each, and implement controls before any emergency case proceeds.",B:"Yes — but schedule the FMEA for next week, after the current emergencies are handled.",C:"No — FMEA is too time-consuming during a crisis. Use clinical judgment only.",D:"No — the scrub nurse's concern is probably an overreaction. Proceed normally."},
+    p:{A:10,B:4,C:4,D:-5},a:'A'},
+  ]},
+ 3:{
+  title:"Round 3 — Risk Mitigation & Control",
+  ashrm:"ASHRM ERM — Financial & Legal/Regulatory Domains",
+  situation:"Date: January 17–21, 2026. Day 3 of the crisis. 23 elective surgeries cancelled. 4 emergency cases completed using improvised draping — the scrub nurse documented contamination risk in the incident report. Two post-operative infections (SSI) reported on Ward 3. The hospital attempted local market procurement — incompatible specifications purchased (QAR 240,000 wasted). An alternative UAE supplier has been found with a 3-week delivery lead time. Mr. Al-Rashidi (cancer patient) is deteriorating while waiting.",
+  qs:[
+   {q:"What is your IMMEDIATE mitigation strategy for the supply shortage?",bloom:"Apply",
+    hint:"You must act now. The crisis is active. What is the best combination of controls?",
+    o:{A:"Activate emergency multi-source procurement (UAE supplier + 2 others contacted simultaneously) + cancel all non-emergency surgeries + activate Business Continuity Protocol + document all decisions formally.",B:"Contact only the UAE supplier identified and wait for their 3-week delivery.",C:"Cancel ALL surgeries including emergencies to eliminate all supply risk.",D:"Continue using the incompatible local supplies with extra sterilisation precautions."},
+    p:{A:10,B:4,C:0,D:-5},a:'A'},
+   {q:"How do you apply the Hierarchy of Controls to reduce infection risk in emergency surgeries?",bloom:"Apply",
+    hint:"The Hierarchy of Controls (Elimination → Substitution → Engineering → Administrative → PPE) must be applied systematically.",
+    o:{A:"PPE only — double-glove all surgical team members and proceed with all surgeries.",B:"Administrative controls only — brief all staff on careful technique.",C:"Engineering controls only — increase sterilisation duration for all supplies.",D:"Elimination: cancel all non-essential cases. Substitution: source compliant alternative supplies. Engineering: enhance sterilisation protocols. Administrative: mandatory surgical team briefing. PPE: maximum barrier precautions. Document all 5 levels applied."},
+    p:{A:4,B:4,C:4,D:10},a:'D'},
+   {q:"When do you notify the Ministry of Public Health (MoPH) in Qatar?",bloom:"Apply",
+    hint:"Qatar Law No. 22/2021 requires healthcare facilities to notify MoPH of patient safety events within 48 hours.",
+    o:{A:"Notify MoPH within 48 hours of the event (by January 17) — as required by Qatar law. Submit a full incident report with timeline, impact, and corrective actions.",B:"Notify MoPH after the crisis is resolved — reporting before resolution may cause unnecessary regulatory scrutiny.",C:"Notify MoPH only if a patient dies — minor supply issues do not require regulatory notification.",D:"Do not notify MoPH — handle the situation internally to protect the hospital's reputation."},
+    p:{A:10,B:0,C:-5,D:-5},a:'A'},
+   {q:"How do you communicate with the 41 patients whose surgeries were cancelled?",bloom:"Evaluate",
+    hint:"ASHRM and Qatar MoPH require transparent patient communication. Some patients are in pain. Mr. Al-Rashidi is deteriorating.",
+    o:{A:"Send a general letter to all affected patients apologising for the delay without specific details.",B:"Full open disclosure using SBAR (Situation-Background-Assessment-Recommendation): explain what happened, what was done, and what alternative arrangements are being made. Assign a patient liaison for each affected case.",C:"Communicate only with patients who ask — proactive disclosure may increase legal liability.",D:"Do not communicate yet — wait until full supply is restored before contacting patients."},
+    p:{A:4,B:10,C:0,D:0},a:'B'},
+   {q:"What financial risk control do you activate?",bloom:"Apply",
+    hint:"The hospital has lost QAR 1.8 million in revenue and spent QAR 240,000 on incompatible supplies. More costs are coming.",
+    o:{A:"Ask the Finance Department to manage this — it is their responsibility, not Risk Management.",B:"Ignore financial impact for now — patient safety comes first, finance later.",C:"Reduce all hospital expenditure by 20% to compensate for lost revenue.",D:"Activate emergency budget allocation + formal cost tracking for all crisis-related expenditure + notify hospital insurer (risk financing) + financial impact report to Board."},
+    p:{A:4,B:4,C:-5,D:10},a:'D'},
+  ]},
+ 4:{
+  title:"Round 4 — Monitoring & Communication",
+  ashrm:"ASHRM ERM — All 8 Domains Integration",
+  situation:"Date: January 21 – February 10, 2026. The UAE supplier has confirmed delivery in 3 weeks. 41 surgical cases cancelled in total. Mr. Al-Rashidi (cancer patient) required a more extensive operation due to disease progression during the delay. Two SSI cases confirmed — SSI rate is now 3× normal baseline. MoPH has visited the hospital and requested a formal corrective action plan within 14 days. A staff survey found that 78% of Theatre nurses said they did not know what to do during the supply shortage.",
+  qs:[
+   {q:"What Key Risk Indicators (KRIs) do you set up for monitoring this crisis going forward?",bloom:"Create",
+    hint:"KRIs are early warning signals. What KRIs would have detected this crisis earlier — and what do you monitor now?",
+    o:{A:"Set 4 KRIs with traffic-light thresholds (green/amber/red): (1) Sterile supply stock level — alert at <10 days, (2) SSI rate — alert at >1.5× baseline, (3) Supplier performance score — alert if any missed delivery, (4) Surgical cancellation rate — alert at >5% weekly.",B:"Monitor only financial KPIs — cost per surgical case and revenue recovery rate.",C:"No formal KRIs needed — the crisis has passed and normal monitoring resumes.",D:"Monitor only SSI rates — infection is the most serious clinical outcome."},
+    p:{A:10,B:4,C:-5,D:4},a:'A'},
+   {q:"How do you communicate with MoPH regarding the corrective action plan?",bloom:"Evaluate",
+    hint:"MoPH has formal regulatory authority. Qatar Law No. 22/2021 requires a corrective action plan after a patient safety event of this magnitude.",
+    o:{A:"Submit a full, transparent corrective action plan within the MoPH deadline: root cause, timeline of events, immediate actions taken, systemic changes planned, and KRI monitoring dashboard. Assign a named Compliance Officer to manage MoPH communication.",B:"Submit a minimal report — provide only what MoPH specifically asks for.",C:"Request a delay — tell MoPH you are still investigating.",D:"Dispute MoPH's authority — argue that this was an external event beyond the hospital's control."},
+    p:{A:10,B:4,C:0,D:-5},a:'A'},
+   {q:"What do you do about the 78% of Theatre nurses who did not know what to do during the crisis?",bloom:"Apply",
+    hint:"ASHRM Human Capital Risk includes staff competency and emergency preparedness. This is a systemic training failure, not an individual failure.",
+    o:{A:"Send an email reminder to all Theatre staff about emergency supply procedures.",B:"Note the training gap and include it in the annual training plan for next year.",C:"Issue formal warnings to nurses who did not know the protocol — individual accountability is important.",D:"Implement: (1) Mandatory emergency supply protocol training for all Theatre staff, (2) Update BCP with clear roles and authority, (3) Competency assessment within 30 days, (4) Simulated supply shortage drill within 60 days. Apply Just Culture — this is a system failure."},
+    p:{A:4,B:4,C:-5,D:10},a:'D'},
+   {q:"What SSI surveillance and monitoring system do you activate?",bloom:"Apply",
+    hint:"The SSI rate is 3× baseline. Two confirmed cases. More may be developing. What does a rigorous monitoring response look like?",
+    o:{A:"Activate enhanced SSI surveillance: daily wound surveillance for all January surgical patients, infection control team on daily rounds, microbiologist consultation, weekly SSI reporting to Medical Director, and patient notification for those with suspected SSI.",B:"Continue with normal monthly SSI reporting — two cases is not unusual.",C:"Set up weekly review meetings with the Theatre manager to discuss SSI cases.",D:"Wait for laboratory results from the two confirmed cases before setting up any additional monitoring."},
+    p:{A:10,B:-5,C:4,D:4},a:'A'},
+   {q:"How do you report this crisis to the Hospital Board?",bloom:"Evaluate",
+    hint:"ASHRM recommends that risk managers report significant events to the governing board. The Board has both governance and fiduciary responsibility.",
+    o:{A:"Provide a verbal update to the CEO — the CEO will inform the Board if needed.",B:"The Board does not need to be informed — this was an operational issue, not a strategic one.",C:"Prepare a formal Board Risk Report: executive summary, visual risk matrix, timeline of events, patient impact summary, financial impact (QAR 2.04 million), corrective actions, and 90-day monitoring plan. Present at the next Board meeting.",D:"Wait until the crisis is fully resolved before approaching the Board."},
+    p:{A:4,B:-5,C:10,D:4},a:'C'},
+  ]},
+ 5:{
+  title:"Round 5 — Evaluation & System Learning",
+  ashrm:"ASHRM ERM Self-Assessment — Human Capital Domain",
+  situation:"Date: February 10 – March 1, 2026. Full sterile supply restored. Root Cause Analysis (RCA) formally initiated. Total impact: 41 surgical cases cancelled, QAR 2.04 million in losses, 2 SSI cases (both recovering), Mr. Al-Rashidi underwent extended surgery and is now stable. MoPH has issued a formal improvement notice requiring systemic changes within 90 days. The Board has requested a full presentation of lessons learned and the hospital's corrective action plan.",
+  qs:[
+   {q:"What Root Cause Analysis (RCA) method do you use — and why?",bloom:"Evaluate",
+    hint:"RCA must identify SYSTEM causes, not just individual failures. Multiple methods exist. Which is most appropriate for this complex, multi-cause event?",
+    o:{A:"5 Whys Analysis + Fishbone Diagram (Cause-and-Effect) + Contributing Factor Analysis across all causal categories (Process, Equipment, People, Environment, Policy). This combination identifies both immediate and root causes and maps all contributing factors.",B:"5 Whys only — it is sufficient for most supply chain failures.",C:"Write an incident report describing what happened — this is the standard RCA at Al-Rayyan.",D:"Skip formal RCA — focus energy on preventing the next crisis rather than analysing the past."},
+    p:{A:10,B:4,C:4,D:-5},a:'A'},
+   {q:"What SYSTEM-LEVEL changes do you recommend to prevent recurrence?",bloom:"Create",
+    hint:"The MoPH improvement notice requires systemic change. Individual-level fixes are not sufficient.",
+    o:{A:"Find a more reliable single supplier with a stronger contract — the problem was supplier quality, not the single-supplier model.",B:"(1) Multi-supplier policy: minimum 2 approved suppliers for all critical supplies, (2) Business Continuity Plan: written, tested, with 30-day emergency stock buffer, (3) Risk Register: add supply chain dependency as HIGH risk with quarterly review, KRI dashboard, and named Risk Owner.",C:"Update the risk register only — documentation is the most important output of the RCA.",D:"Hire more staff in the supply chain department — human resource investment prevents future crises."},
+    p:{A:-5,B:10,C:4,D:4},a:'B'},
+   {q:"How do you apply Just Culture principles to this event?",bloom:"Evaluate",
+    hint:"Just Culture (ASHRM, WHO) distinguishes between system failures, human error, and reckless behaviour.",
+    o:{A:"Discipline the supply chain manager for being on annual leave during a crisis.",B:"No accountability process — this was entirely an external event (flooding) outside anyone's control.",C:"Conduct a Just Culture analysis: (1) Separate system failures (no BCP, no multi-supplier policy) from individual decisions, (2) No blame for staff following their training (78% had none), (3) Coaching for the deputy who had no authority to act, (4) Accountability review for leadership decisions. Document findings without personal identifiers.",D:"Dismiss the scrub nurse who raised concerns about improvised supplies — raising alarms during a crisis caused panic."},
+    p:{A:-5,B:4,C:10,D:-5},a:'C'},
+   {q:"What does your UPDATED Risk Register include using ASHRM ERM domains?",bloom:"Create",
+    hint:"A high-quality risk register captures all domains affected by a single event. This crisis touched multiple ASHRM domains.",
+    o:{A:"All 5 domains documented: (1) Operational — supply chain dependency (HIGH), (2) Clinical — SSI risk from improvised supplies (HIGH), (3) Financial — revenue loss from cancellations (HIGH), (4) Legal/Regulatory — MoPH notification delay (MEDIUM), (5) Human Capital — staff competency gap (HIGH). Each risk has an Owner, KRI, and target date.",B:"Operational Risk only — that is the domain this crisis falls under.",C:"Add only the risks that directly caused patient harm — SSI and surgical delay.",D:"The existing risk register is sufficient — add one new entry for 'Supply Chain Failure' and close the review."},
+    p:{A:10,B:4,C:4,D:-5},a:'A'},
+   {q:"What does your 30/60/90-day improvement roadmap include?",bloom:"Create",
+    hint:"MoPH requires a structured corrective action plan. The ASHRM ERM Self-Assessment Tool provides a framework for structured improvement planning.",
+    o:{A:"Write a general list of improvements and submit to MoPH — specific timelines will be set later.",B:"30 days: update risk register only. 60 days: write BCP. 90 days: review and report. (No owners, no success metrics.)",C:"No formal roadmap — improve things as opportunities arise over the next year.",D:"30 days: (1) Multi-supplier contracts signed, (2) Emergency stock buffer established, (3) All Theatre staff trained. 60 days: (1) BCP written and approved, (2) KRI dashboard live, (3) Patient liaison follow-up completed. 90 days: (1) Simulated supply shortage drill, (2) MoPH compliance review, (3) Board presentation. Each action has a named Owner and measurable metric."},
+    p:{A:4,B:4,C:-5,D:10},a:'D'},
+  ]},
+};
+
+var EXROW={id:'OR-EX',domain:'Operational',name:'EXAMPLE: Single Supplier Dependency — hospital relies on one vendor for ALL sterile supplies. Click Edit to see how to fill a row.',L:5,C:5,mit:'Multi-supplier policy: minimum 2 approved suppliers. 30-day emergency stock buffer. Quarterly supplier audit.',RL:2,RC:3,status:'In Progress',owner:'Chief Procurement Officer',isEx:true};
+
+// Storage prefix c1_ to separate from Case 3
+function sl(k,v){
+  try{localStorage.setItem('c1_'+k,JSON.stringify(v));}catch(e){}
+  if(db&&fbReady){
+    db.ref('c1/'+fbk(k)).set(v).catch(function(e){console.warn('FB write error:',k,e);});
+  }
+}
+function gl(k,d){try{var v=localStorage.getItem('c1_'+k);return v?JSON.parse(v):d;}catch(e){return d;}}
+function gk(){return user.group+'_r'+curRound;}
+function getReg(){return gl('registry',{});}
+function saveReg(r){sl('registry',r);}
+
+function checkID(id){
+ id=(id||'').trim();
+ if(!id){document.getElementById('idLocked').style.display='none';document.getElementById('groupFg').style.display='block';return;}
+ var reg=getReg();
+ if(reg[id]){
+  document.getElementById('lockedGrp').textContent=reg[id].group;
+  document.getElementById('idLocked').style.display='block';
+  document.getElementById('groupFg').style.display='none';
+ } else {
+  document.getElementById('idLocked').style.display='none';
+  document.getElementById('groupFg').style.display='block';
+ }
+}
+
+function setRole(r){
+ ROLE=r;
+ ['S','L','I'].forEach(function(x){document.getElementById('tab'+x).classList.remove('on');});
+ var m={student:'S',leader:'L',instructor:'I'};
+ document.getElementById('tab'+m[r]).classList.add('on');
+ var isI=(r==='instructor');
+ document.getElementById('stdFields').style.display=isI?'none':'block';
+ document.getElementById('instrFields').style.display=isI?'block':'none';
+ document.getElementById('lnote').style.display=isI?'none':'block';
+ document.getElementById('lerr').style.display='none';
+}
+
+function doLogin(){
+ var err=document.getElementById('lerr');err.style.display='none';
+ if(ROLE==='instructor'){
+  var pw=(document.getElementById('iPW').value||'').trim();
+  if(pw!==PW){err.textContent='Incorrect password. Please try again.';err.style.display='block';return;}
+  var n=(document.getElementById('iInstrName').value||'').trim()||'Instructor';
+  user={name:n,id:'instructor',group:'INSTRUCTOR',role:'instructor'};
+  launch();return;
+ }
+ var n=(document.getElementById('iName').value||'').trim();
+ var id=(document.getElementById('iID').value||'').trim();
+ var g=document.getElementById('iGroup').value;
+ if(!n){alert('Please enter your full name.');return;}
+ if(!id){alert('Please enter your student ID.');return;}
+ var reg=getReg();
+ if(reg[id]){
+  g=reg[id].group;
+ } else {
+  if(!g){alert('Please select your group.');return;}
+  reg[id]={name:n,group:g,role:ROLE,at:new Date().toISOString()};saveReg(reg);
+ }
+ user={name:n,id:id,group:g,role:ROLE};sl('u_'+id,user);launch();
+}
+
+function launch(){
+ curRound=gl('cur_round',1);
+ submitted=gl('sub_'+user.id+'_r'+curRound,false);
+ myAns=gl('ans_'+user.id+'_r'+curRound,{});
+ myRef=gl('ref_'+user.id+'_r'+curRound,{r1:'',r2:''});
+ rrRows=gl('rr_'+user.group,[JSON.parse(JSON.stringify(EXROW))]);
+ document.getElementById('loginView').style.display='none';
+ document.getElementById('mainView').style.display='block';
+ document.getElementById('hUser').textContent=user.name+(user.role==='instructor'?'':' · '+user.group+(user.role==='leader'?' (Leader)':''));
+ document.getElementById('hRound').textContent='Round '+curRound;
+
+ if(user.role==='instructor'){
+  document.getElementById('iBadge').style.display='inline-block';
+  document.getElementById('ntIn').style.display='block';
+  document.getElementById('ntDec').style.display='none';
+  renderIn(); renderLB();
+
+ } else if(user.role==='leader'){
+  // Leader sees Group Dashboard, Leaderboard but NOT instructor panel
+  document.getElementById('ntDec').style.display='block';
+  document.getElementById('ntGrp').style.display='block';
+  document.getElementById('ntLB').style.display='block';
+  document.getElementById('ntIn').style.display='none';
+  document.getElementById('rrGrp').textContent=user.group;
+  renderDec(); renderGrpPartial(); renderGDOnce(); renderRR(); renderLB();
+  setInterval(function(){renderGrpPartial(); renderSc(); renderLB();},4000);
+
+ } else {
+  // Student — hide Group Dashboard and Leaderboard
+  document.getElementById('ntGrp').style.display='none';
+  document.getElementById('ntLB').style.display='none';
+  document.getElementById('ntIn').style.display='none';
+  document.getElementById('rrGrp').textContent=user.group;
+  renderDec(); renderRR();
+  setInterval(function(){renderSc();},4000);
+ }
+}
+
+function showPg(id,btn){
+ document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('on');});
+ document.querySelectorAll('.nt').forEach(function(t){t.classList.remove('on');});
+ document.getElementById(id).classList.add('on');
+ if(btn)btn.classList.add('on');
+ if(id==='pgGrp'){renderGrpPartial();renderSc();}
+ if(id==='pgLB')renderLB();
+ if(id==='pgRR')renderRR();
+ if(id==='pgIn')renderIn();
+}
+
+function renderDec(){
+ var el=document.getElementById('decDiv');
+ var r=RD[curRound];
+ var openRnd=gl('cur_round',1);
+ if(curRound>openRnd){
+  el.innerHTML='<div class="round-locked"><h3>⏳ Round '+curRound+' is not open yet</h3><p>Your instructor has not unlocked this round. Please wait.<br>Currently open: <strong>Round '+openRnd+'</strong></p></div>';
+  return;
+ }
+ if(!r){el.innerHTML='<div class="emp"><h4>Round not found</h4></div>';return;}
+ if(submitted){
+  var h='<div class="ok"><h3>✓ Your decisions are submitted for Round '+curRound+'!</h3><p>Go to the Group Dashboard to see all answers and discuss. Wait for your instructor to open the next round.</p></div>';
+  h+='<div class="situation-box"><h4>Situation — '+r.title+'</h4><p>'+r.situation+'</p></div>';
+  h+='<div class="stit">Your submitted answers</div>';
+  r.qs.forEach(function(q,i){
+   var qn='q'+(i+1);var ans=myAns[qn]||'?';
+   h+='<div class="qcard"><div class="ql">Decision '+(i+1)+' — You chose: <strong>'+ans+'</strong></div><div class="qt">'+q.q+'</div><div style="font-size:12px;color:#002A5C;margin-top:4px">'+q.o[ans]+'</div></div>';
+  });
+  var ref=gl('ref_'+user.id+'_r'+curRound,{r1:'',r2:''});
+  if(ref.r1||ref.r2){
+   h+='<div class="reflection-box"><h4>Your Round Reflection</h4>';
+   if(ref.r1)h+='<div class="rq"><label>Difficult decision</label><div style="font-size:13px;color:#0A1628;padding:8px;background:#F4F6FA;border-radius:6px">'+ref.r1+'</div></div>';
+   if(ref.r2)h+='<div class="rq"><label>ASHRM ERM domain &amp; tool applied</label><div style="font-size:13px;color:#0A1628;padding:8px;background:#F4F6FA;border-radius:6px">'+ref.r2+'</div></div>';
+   h+='</div>';
+  }
+  el.innerHTML=h;return;
+ }
+ var h='<div class="situation-box"><h4>Situation Update — '+r.title+'</h4><p>'+r.situation+'</p></div>';
+ h+='<div class="stit">'+r.title+' &nbsp;<span style="font-size:11px;font-weight:400;color:#6B7A8D">'+r.ashrm+'</span></div>';
+ r.qs.forEach(function(q,i){
+  var qn='q'+(i+1);var sel=myAns[qn]||'';
+  h+='<div class="qcard"><div class="ql">DECISION '+(i+1)+' OF 5 &nbsp;·&nbsp; Bloom\'s: '+q.bloom+'</div>';
+  h+='<div class="qt">'+q.q+'</div>';
+  if(q.hint)h+='<div class="qhint">'+q.hint+'</div>';
+  ['A','B','C','D'].forEach(function(l){
+   h+='<div class="opt'+(sel===l?' sel':'')+'" onclick="selA(\''+qn+'\',\''+l+'\')">';
+   h+='<div class="ol">'+l+'</div><div style="flex:1">'+q.o[l]+'</div></div>';
+  });
+  h+='</div>';
+ });
+ h+='<div class="reflection-box"><h4>Round Reflection — Complete before submitting</h4>';
+ h+='<div class="rq"><label>1. What was the most difficult decision this round? Why? (Write 2–3 sentences)</label>';
+ h+='<textarea id="ref1" placeholder="Describe which decision was most challenging and explain your reasoning..." onchange="saveRef()">'+((myRef&&myRef.r1)||'')+'</textarea></div>';
+ h+='<div class="rq"><label>2. Which ASHRM ERM domain did this round focus on? How did it help your decisions?</label>';
+ h+='<textarea id="ref2" placeholder="Name the ASHRM ERM domain (e.g. Operational Risk) and explain how the framework guided your team\'s decisions..." onchange="saveRef()">'+((myRef&&myRef.r2)||'')+'</textarea></div></div>';
+ var done=r.qs.every(function(_,i){return myAns['q'+(i+1)];});
+ h+='<div style="margin-top:13px;display:flex;align-items:center;gap:11px;flex-wrap:wrap"><button class="btn btn-p" onclick="subDec()" '+(done?'':'disabled')+'>'+(done?'Submit decisions + reflection':'Answer all 5 questions to submit')+'</button>';
+ if(!done)h+='<span style="font-size:12px;color:#6B7A8D">'+Object.keys(myAns).length+' / 5 answered</span>';
+ h+='</div>';
+ el.innerHTML=h;
+}
+
+function saveRef(){
+ var r1=document.getElementById('ref1');var r2=document.getElementById('ref2');
+ myRef={r1:r1?r1.value:'',r2:r2?r2.value:''};
+ sl('ref_'+user.id+'_r'+curRound,myRef);
+}
+
+function selA(qn,l){
+ if(submitted)return;
+ myAns[qn]=l;sl('ans_'+user.id+'_r'+curRound,myAns);
+ var r1=document.getElementById('ref1');var r2=document.getElementById('ref2');
+ if(r1)myRef.r1=r1.value;if(r2)myRef.r2=r2.value;
+ renderDec();
+}
+
+function subDec(){
+ var r=RD[curRound];
+ if(!r.qs.every(function(_,i){return myAns['q'+(i+1)];})){alert('Please answer all 5 questions.');return;}
+ saveRef();
+ var subs=gl('subs_'+gk(),[]);
+ var ex=-1;subs.forEach(function(s,i){if(s.id===user.id)ex=i;});
+ var e={id:user.id,name:user.name,role:user.role,group:user.group,round:curRound,answers:JSON.parse(JSON.stringify(myAns)),reflection:JSON.parse(JSON.stringify(myRef)),at:new Date().toISOString()};
+ if(ex>=0)subs[ex]=e;else subs.push(e);
+ sl('subs_'+gk(),subs);
+ submitted=true;sl('sub_'+user.id+'_r'+curRound,true);
+ renderDec();renderGrpPartial();renderLB();
+}
+
+function renderGrpPartial(){
+ var allSubs=gl('subs_'+gk(),[]);var gd=gl('gd_'+gk(),null);var r=RD[curRound];
+ var reg=getReg();
+ // Separate leader submissions from member submissions
+ var leaderSubs=allSubs.filter(function(s){return s.role==='leader'||s.id===user.id&&user.role==='leader';});
+ var memberSubs=allSubs.filter(function(s){return s.role!=='leader';});
+ // Find registered leader of this group
+ var leaderEntry=Object.entries(reg).find(function(e){return e[1].group===(user.group||gk().replace('_r'+curRound,''))&&e[1].role==='leader';});
+ var leaderId=leaderEntry?leaderEntry[0]:null;
+
+ var pd=document.getElementById('pdot');var pt=document.getElementById('ptxt');if(!pd)return;
+ if(gd){pd.className='dot dg';pt.textContent='Group decision submitted! Score visible in Leaderboard.';}
+ else if(memberSubs.length>0){pd.className='dot da';pt.textContent=memberSubs.length+' member(s) submitted — discuss as a group then submit the group decision below.';}
+ else{pd.className='dot dr';pt.textContent='Waiting for members to submit individual decisions...';}
+
+ // Render member grid
+ var mg='';
+ if(memberSubs.length===0){
+  mg='<div class="emp" style="grid-column:1/-1"><h4>No member submissions yet</h4><p>Members appear here as they submit their individual decisions.</p></div>';
+ } else {
+  memberSubs.forEach(function(sb){
+   var ini=sb.name.split(' ').map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
+   mg+='<div class="mc"><div class="mn"><div class="av">'+ini+'</div>'+sb.name+'</div>';
+   for(var i=1;i<=5;i++){var a=sb.answers['q'+i]||'';mg+='<div class="mar"><span class="mq">Q'+i+'</span><span class="mv '+(a?'v'+a:'vn')+'">'+( a||'—')+'</span></div>';}
+   mg+='</div>';
+  });
+ }
+ // Show leader's own submission separately if they submitted
+ if(leaderSubs.length>0){
+  var ls=leaderSubs[0];
+  mg+='<div class="mc" style="border:2px solid #C8A951;background:#FFFBEE"><div class="mn"><div class="av" style="background:#C8A951;color:#002A5C">LDR</div>'+ls.name+' (Leader)</div>';
+  for(var i=1;i<=5;i++){var a=ls.answers['q'+i]||'';mg+='<div class="mar"><span class="mq">Q'+i+'</span><span class="mv '+(a?'v'+a:'vn')+'">'+( a||'—')+'</span></div>';}
+  mg+='</div>';
+ }
+ document.getElementById('mGrid').innerHTML=mg;
+ renderDist(allSubs,r);
+
+ // Show group decision result if submitted
+ if(gd){
+  var sc=0;if(r)r.qs.forEach(function(q,i){sc+=(q.p[gd.answers['q'+(i+1)]]||0);});
+  document.getElementById('gdDiv').innerHTML='<div class="ok"><h3>Group decision submitted!</h3><p>Group score for Round '+curRound+': <strong>'+sc+' / 50 points</strong></p></div>';
+  // Show report section for leader
+  if(user.role==='leader'||user.role==='instructor'){
+   renderReportSection();
+  }
+ }
+}
+
+function renderDist(subs,r){
+ var el=document.getElementById('distDiv');if(!el)return;
+ document.getElementById('dqn').textContent=viewQ;
+ if(!r||subs.length===0){el.innerHTML='<div class="emp" style="padding:12px 0"><p>No submissions yet</p></div>';return;}
+ var q=r.qs[viewQ-1];var ct={A:0,B:0,C:0,D:0};
+ subs.forEach(function(s){var a=s.answers['q'+viewQ];if(a)ct[a]++;});
+ var tot=subs.length;
+ var h='<div style="font-size:11px;color:#6B7A8D;margin-bottom:9px">'+q.q+'</div>';
+ ['A','B','C','D'].forEach(function(l){
+  var pct=tot>0?Math.round(ct[l]/tot*100):0;
+  h+='<div class="db"><div class="db-top"><span><strong>'+l+'</strong> <span style="color:#6B7A8D">'+ct[l]+' vote'+(ct[l]!==1?'s':'')+' ('+pct+'%)</span></span></div>'+
+   '<div style="height:8px;background:#F4F6FA;border-radius:4px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:#378ADD;border-radius:4px"></div></div></div>';
+ });el.innerHTML=h;
+}
+function pQ(){if(viewQ>1){viewQ--;renderGrpPartial();}}
+function nQ(){if(viewQ<5){viewQ++;renderGrpPartial();}}
+
+function renderGDOnce(){
+ var gd=gl('gd_'+gk(),null);var r=RD[curRound];var el=document.getElementById('gdDiv');if(!el)return;
+ if(gd){var sc=0;if(r)r.qs.forEach(function(q,i){sc+=(q.p[gd.answers['q'+(i+1)]]||0);});
+  el.innerHTML='<div class="ok"><h3>Group decision submitted!</h3><p>Group score: <strong>'+sc+' / 50 pts</strong></p></div>';gdRendered=false;return;}
+ if(user.role==='leader'||user.role==='instructor'){
+  var subs=gl('subs_'+gk(),[]);
+  if(subs.length===0){el.innerHTML='<div class="emp"><p>Wait for at least one member to submit their individual decisions first.</p></div>';gdRendered=false;return;}
+  var h='<p style="font-size:12px;color:#6B7A8D;margin-bottom:12px">After group discussion, select the final agreed answer for each question. Your selection is saved until you click Submit.</p>';
+  if(r){r.qs.forEach(function(q,i){
+   var nm='c1r'+curRound+'q'+(i+1);
+   h+='<div class="gdq"><div class="gdqt">Decision '+(i+1)+': '+q.q+'</div><div class="gdopts">';
+   ['A','B','C','D'].forEach(function(l){h+='<span class="gdo"><input type="radio" name="'+nm+'" id="'+nm+l+'" value="'+l+'"><label for="'+nm+l+'">'+l+'</label></span>';});
+   h+='</div></div>';
+  });}
+  h+='<button class="btn btn-c" onclick="subGD()" style="margin-top:8px;font-size:14px;padding:10px 22px">Submit group decision</button>';
+  el.innerHTML=h;gdRendered=true;
+ } else {
+  el.innerHTML='<div class="emp"><p>Only the Group Leader can submit the group decision after discussion.</p></div>';gdRendered=false;
+ }
+}
+
+function subGD(){
+ var r=RD[curRound];var ans={};var ok=true;
+ for(var i=1;i<=5;i++){var nm='c1r'+curRound+'q'+i;var s=document.querySelector('input[name="'+nm+'"]:checked');if(!s){ok=false;break;}ans['q'+i]=s.value;}
+ if(!ok){alert('Please select an answer for ALL 5 questions before submitting.');return;}
+ var sc=0;if(r)r.qs.forEach(function(q,i){sc+=(q.p[ans['q'+(i+1)]]||0);});
+ var gd={group:user.group,round:curRound,answers:ans,score:sc,at:new Date().toISOString()};
+ sl('gd_'+gk(),gd);
+ var all=gl('allGD',[]);var ex=-1;all.forEach(function(g,i){if(g.group===user.group&&g.round===curRound)ex=i;});
+ if(ex>=0)all[ex]=gd;else all.push(gd);sl('allGD',all);
+ gdRendered=false;renderGDOnce();renderSc();renderLB();
+}
+
+function renderSc(){
+ var b=document.getElementById('scDiv');if(!b)return;
+ var gd=gl('gd_'+gk(),null);var r=RD[curRound];var subs=gl('subs_'+gk(),[]);
+ if(!gd||!r){b.innerHTML='';return;}
+ var gsc=0;r.qs.forEach(function(q,i){gsc+=(q.p[gd.answers['q'+(i+1)]]||0);});
+ var h='<div class="score-box"><h3>Round '+curRound+' — Score Summary</h3>';
+ h+='<div class="srow"><span style="font-weight:700">Group Decision Total</span><span class="spts">'+gsc+' / 50</span></div>';
+ if(user.role==='instructor'||user.role==='leader'){
+  h+='<div style="margin-top:9px;font-size:11px;color:rgba(255,255,255,.55);margin-bottom:4px">Individual scores (leader &amp; instructor only):</div>';
+  subs.forEach(function(s){var isc=0;r.qs.forEach(function(q,i){isc+=(q.p[s.answers['q'+(i+1)]]||0);});
+   h+='<div class="srow"><span>'+s.name+'</span><span class="spts" style="font-size:16px">'+isc+'</span></div>';});
+ }h+='</div>';b.innerHTML=h;
+}
+
+function lv(n){return n>=15?'lx':n>=10?'lh':n>=5?'lm':'ll';}
+function lvl(n){return n>=15?'EXTREME':n>=10?'HIGH':n>=5?'MEDIUM':'LOW';}
+function dc(d){return d==='Operational'?'dop':d==='Clinical'?'dcl':d==='Financial'?'dfi':d==='Legal/Regulatory'?'dlr':d==='Human Capital'?'dhc':'dst';}
+function sc2(s){return s==='Open'?'so':s==='In Progress'?'spr':'sdn';}
+
+function renderRR(){
+ var ext=rrRows.filter(function(r){return!r.isEx&&r.L*r.C>=15;}).length;
+ var op=rrRows.filter(function(r){return!r.isEx&&r.status==='Open';}).length;
+ var rd=rrRows.filter(function(r){return!r.isEx&&r.RL*r.RC<r.L*r.C;}).length;
+ var cnt=rrRows.filter(function(r){return!r.isEx;}).length;
+ document.getElementById('rrMet').innerHTML=
+  '<div class="mc2"><div class="mn2">'+cnt+'</div><div class="ml">Risks identified</div></div>'+
+  '<div class="mc2 mrd"><div class="mn2">'+ext+'</div><div class="ml">Extreme</div></div>'+
+  '<div class="mc2"><div class="mn2">'+op+'</div><div class="ml">Open</div></div>'+
+  '<div class="mc2 mgr"><div class="mn2">'+rd+'</div><div class="ml">Risk reduced</div></div>';
+ var DOMS=['Operational','Clinical','Financial','Legal/Regulatory','Human Capital','Strategic','Technology','Hazard'];
+ var STATS=['Open','In Progress','Closed'];
+ var h='';
+ rrRows.forEach(function(r,i){
+  var rpn=r.L*r.C;var res=r.RL*r.RC;
+  if(editIdx===i){
+   h+='<tr style="background:#EBF2FB"><td><input class="ri" value="'+r.id+'" onchange="re('+i+',\'id\',this.value)" style="width:50px"></td>'+
+    '<td><select class="ri" onchange="re('+i+',\'domain\',this.value)">'+DOMS.map(function(d){return'<option'+(d===r.domain?' selected':'')+'>'+d+'</option>';}).join('')+'</select></td>'+
+    '<td><input class="ri" value="'+r.name.replace(/"/g,'&quot;').substring(0,70)+'" onchange="re('+i+',\'name\',this.value)" style="min-width:130px"></td>'+
+    '<td><input class="ri" type="number" min="1" max="5" value="'+r.L+'" onchange="re('+i+',\'L\',+this.value)" style="width:38px"></td>'+
+    '<td><input class="ri" type="number" min="1" max="5" value="'+r.C+'" onchange="re('+i+',\'C\',+this.value)" style="width:38px"></td>'+
+    '<td><strong>'+rpn+'</strong></td><td><span class="'+lv(rpn)+'">'+lvl(rpn)+'</span></td>'+
+    '<td><input class="ri" value="'+r.mit.substring(0,100)+'" onchange="re('+i+',\'mit\',this.value)" style="min-width:150px"></td>'+
+    '<td><input class="ri" type="number" min="1" max="5" value="'+r.RL+'" onchange="re('+i+',\'RL\',+this.value)" style="width:38px"></td>'+
+    '<td><input class="ri" type="number" min="1" max="5" value="'+r.RC+'" onchange="re('+i+',\'RC\',+this.value)" style="width:38px"></td>'+
+    '<td><span class="'+lv(res)+'">'+lvl(res)+' '+res+'</span></td>'+
+    '<td><select class="ri" onchange="re('+i+',\'status\',this.value)">'+STATS.map(function(s){return'<option'+(s===r.status?' selected':'')+'>'+s+'</option>';}).join('')+'</select></td>'+
+    '<td><input class="ri" value="'+r.owner.substring(0,45)+'" onchange="re('+i+',\'owner\',this.value)" style="min-width:100px"></td>'+
+    '<td><button class="btn btn-c" onclick="sv('+i+')" style="font-size:11px;padding:4px 8px">Save</button></td></tr>';
+  } else {
+   h+='<tr'+(r.isEx?' class="ex-row"':'')+'>'+
+    '<td style="font-weight:700;color:#002A5C;font-size:10px;white-space:nowrap">'+r.id+'</td>'+
+    '<td><span class="'+dc(r.domain)+'">'+r.domain+'</span></td>'+
+    '<td style="font-weight:600;color:#002A5C;font-size:12px;max-width:180px">'+r.name+'</td>'+
+    '<td style="text-align:center">'+r.L+'</td><td style="text-align:center">'+r.C+'</td>'+
+    '<td style="text-align:center;font-weight:700">'+rpn+'</td><td><span class="'+lv(rpn)+'">'+lvl(rpn)+'</span></td>'+
+    '<td style="font-size:11px;color:#6B7A8D;max-width:200px">'+r.mit+'</td>'+
+    '<td style="text-align:center">'+r.RL+'</td><td style="text-align:center">'+r.RC+'</td>'+
+    '<td><span class="'+lv(res)+'">'+lvl(res)+' '+res+'</span></td>'+
+    '<td><span class="'+sc2(r.status)+'">'+r.status+'</span></td>'+
+    '<td style="font-size:11px;color:#6B7A8D">'+r.owner+'</td>'+
+    '<td>'+(r.isEx?'<span style="font-size:10px;color:#C8A951;font-weight:700">EXAMPLE</span>':
+    '<button class="btn btn-o" onclick="ed('+i+')" style="font-size:11px;padding:4px 8px">Edit</button> <button onclick="dl('+i+')" style="background:none;border:none;color:#C0392B;cursor:pointer;font-size:17px;font-weight:700;line-height:1;padding:0 3px">&#10005;</button>')+'</td></tr>';
+  }
+ });
+ document.getElementById('rrBody').innerHTML=h;
+}
+function re(i,f,v){rrRows[i][f]=v;}
+function ed(i){editIdx=i;renderRR();}
+function sv(i){editIdx=null;renderRR();}
+function addRow(){rrRows.push({id:'OR-'+(rrRows.length),domain:'Operational',name:'Click Edit to name this risk',L:1,C:1,mit:'Define your mitigation action here',RL:1,RC:1,status:'Open',owner:'',isEx:false});editIdx=rrRows.length-1;renderRR();}
+function dl(i){if(confirm('Remove this risk from the register?')){rrRows.splice(i,1);if(editIdx===i)editIdx=null;renderRR();}}
+function saveRR(){
+ sl('rr_'+user.group,rrRows);
+ var all=gl('allRR',{});all[user.group]={group:user.group,rows:rrRows,at:new Date().toISOString()};sl('allRR',all);
+ var b=document.getElementById('saveBtn');b.textContent='Saved! ✓';setTimeout(function(){b.textContent='Save register';},2000);renderLB();
+}
+
+
+// ── REPORT SECTION ────────────────────────────────────────────
+var ROUND_TOOLS={1:"Risk Register (ASHRM ERM Framework — Operational domain)",2:"5x5 Risk Matrix + FMEA (ASHRM Patient Safety Toolkit)",3:"Hierarchy of Controls — all 5 levels (ASHRM Risk Financing Fundamentals)",4:"KRI Dashboard with traffic-light thresholds (ASHRM ERM Self-Assessment Tool)",5:"SBAR + Stakeholder Map + RCA — 5 Whys / Fishbone (ASHRM Communication Toolkit)"};
+
+function renderReportSection(){
+ var el=document.getElementById('reportSection');if(!el)return;
+ var saved=gl('report_'+user.group+'_r'+curRound,{s1:'',s2:'',s3:'',s4:'',s5:''});
+ var tool=ROUND_TOOLS[curRound]||'See rubric';
+ var hints={
+  s1:'Describe the main goal of Round '+curRound+'. Name the ASHRM ERM domain ('+RD[curRound].ashrm.split('·')[0].trim()+') and explain the specific risk management challenge your team was addressing.',
+  s2:'Explain WHY your team chose each of the 5 decisions. Reference ASHRM tools and case evidence. Use: "We chose option X because..."',
+  s3:'Describe how your team applied the correct RM tool for this round: '+tool+'. Show you applied it to the case — not just named it.',
+  s4:'Name at least ONE specific Qatar regulation or healthcare body (MoPH, QCHP, HMC, Qatar Law No. 22/2021, QNV 2030) and explain how it applies to your decisions this round.',
+  s5:'Summarise your team's key learning from this round. What was the most important risk management decision? What would you do differently?'
+ };
+ var titles={s1:'1. Understanding the Round Task',s2:'2. Decision Justification',s3:'3. Application of the Round's RM Tool',s4:'4. Qatar Context & Regulations',s5:'5. Conclusion'};
+ var marks={s1:'/20',s2:'/25',s3:'/25',s4:'/15',s5:'/15'};
+ var h='<div class="card" style="border:2px solid #002A5C;margin-top:14px">';
+ h+='<div class="ch" style="background:#002A5C;margin:-16px -18px 14px;padding:12px 18px;border-radius:8px 8px 0 0"><h3 style="color:#fff;font-size:15px">Round Report — Group Leader (Max 2 pages · Min 2 APA 7th references)</h3>';
+ h+='<span style="font-size:11px;background:#C8A951;color:#002A5C;padding:2px 8px;border-radius:4px;font-weight:700">Leader only</span></div>';
+ h+='<div id="rptSaved" style="display:none;background:#E1F5EE;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:13px;color:#1A7A4A;font-weight:600">✓ Report saved successfully</div>';
+ ['s1','s2','s3','s4','s5'].forEach(function(k){
+  h+='<div style="margin-bottom:16px">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">';
+  h+='<label style="font-size:13px;font-weight:700;color:#002A5C">'+titles[k]+'</label>';
+  h+='<span style="font-size:11px;background:#C8A951;color:#002A5C;padding:2px 7px;border-radius:4px;font-weight:700">'+marks[k]+'</span></div>';
+  h+='<div style="font-size:11px;color:#6B7A8D;margin-bottom:5px;font-style:italic">'+hints[k]+'</div>';
+  h+='<textarea id="rpt_'+k+'" style="width:100%;border:1.5px solid #E0E4EA;border-radius:7px;padding:9px 11px;font-size:13px;font-family:inherit;min-height:90px;resize:vertical;background:#F4F6FA" placeholder="Write your report section here...">'+( saved[k]||'')+'</textarea>';
+  h+='</div>';
+ });
+ h+='<div style="display:flex;align-items:center;gap:12px;margin-top:4px">';
+ h+='<button class="btn" style="background:#002A5C;color:#fff;padding:10px 22px;font-size:14px;font-weight:700" onclick="saveReport()">Save Report</button>';
+ h+='<span style="font-size:12px;color:#6B7A8D">Attach your Decision Sheet as Appendix when submitting the PDF.</span></div>';
+ h+='</div>';
+ el.innerHTML=h;
+ el.style.display='block';
+}
+
+function saveReport(){
+ var data={};
+ ['s1','s2','s3','s4','s5'].forEach(function(k){
+  var el=document.getElementById('rpt_'+k);
+  data[k]=el?el.value:'';
+ });
+ sl('report_'+user.group+'_r'+curRound,data);
+ var savedEl=document.getElementById('rptSaved');
+ if(savedEl){savedEl.style.display='block';setTimeout(function(){savedEl.style.display='none';},3000);}
+}
+// ── END REPORT SECTION ───────────────────────────────────────
+
+function renderLB(){
+ document.getElementById('lbR').textContent=curRound;
+ var allGD=gl('allGD',[]);var allRR=gl('allRR',{});
+ // Guard: Firebase may return object instead of array
+ if(allGD&&!Array.isArray(allGD))allGD=Object.values(allGD);
+ if(!allGD)allGD=[];
+ var sc={};ALL_GROUPS.forEach(function(g){sc[g]={dec:0,rr:0,tot:0,sub:false};});
+ allGD.forEach(function(gd){if(gd.round===curRound&&sc[gd.group]){sc[gd.group].dec=gd.score;sc[gd.group].sub=true;}});
+ Object.values(allRR).forEach(function(rr){if(sc[rr.group]){var b=rr.rows.filter(function(r){return!r.isEx&&r.mit&&r.mit.length>15;}).length*2;sc[rr.group].rr=Math.min(10,b);}});
+ Object.values(sc).forEach(function(s){s.tot=s.dec+s.rr;});
+ var sorted=Object.entries(sc).filter(function(e){return e[1].sub||e[1].rr>0;}).sort(function(a,b){return b[1].tot-a[1].tot;});
+ var max=sorted.length>0?sorted[0][1].tot:50;
+ document.getElementById('lbMet').innerHTML=
+  '<div class="mc2"><div class="mn2">'+sorted.length+'</div><div class="ml">Active groups</div></div>'+
+  '<div class="mc2 mam"><div class="mn2">'+curRound+'/5</div><div class="ml">Current round</div></div>'+
+  '<div class="mc2 mgr"><div class="mn2">'+(sorted.length>0?sorted[0][1].tot:0)+'</div><div class="ml">Top score</div></div>';
+ var lh='';
+ if(sorted.length===0){lh='<div class="emp"><h4>No group decisions submitted yet</h4><p>Groups appear here after the group leader submits the group decision.</p></div>';}
+ else{sorted.forEach(function(e,i){
+  var n=e[0];var s=e[1];var rc=i===0?'rk1':i===1?'rk2':i===2?'rk3':'';
+  var pct=max>0?Math.round(s.tot/max*100):0;
+  lh+='<div class="lbr"><div class="lrk '+rc+'">'+(i+1)+'</div>'+
+   '<div style="flex:1"><div class="lrn">'+n+'</div><div class="lrs">Decisions: '+s.dec+' pts &nbsp;·&nbsp; Register bonus: +'+s.rr+' pts</div></div>'+
+   '<div style="display:flex;align-items:center;gap:9px"><div class="lbb"><div class="lbf" style="width:'+pct+'%"></div></div><div class="lrt">'+s.tot+'</div></div></div>';
+ });}
+ document.getElementById('lbDiv').innerHTML=lh;
+}
+
+function openRound(n){
+ sl('cur_round',n);curRound=n;
+ document.getElementById('hRound').textContent='Round '+n;
+ document.getElementById('iRnd').textContent='Round '+n;
+ document.getElementById('iRndD').textContent=n;
+ document.getElementById('iAKR').textContent=n;
+ gdRendered=false;renderIn();renderLB();
+ alert('Round '+n+' is now open. Students can now access Round '+n+'.');
+}
+
+function deleteStudent(sid,grp){
+ if(!confirm('Remove student ID '+sid+' from '+grp+'?\nThey will be able to re-register in a different group.')){return;}
+ var reg=getReg();delete reg[sid];saveReg(reg);
+ for(var r=1;r<=5;r++){
+  var k='subs_'+grp+'_r'+r;sl(k,gl(k,[]).filter(function(s){return s.id!==sid;}));
+  try{localStorage.removeItem('c1_sub_'+sid+'_r'+r);localStorage.removeItem('c1_ans_'+sid+'_r'+r);localStorage.removeItem('c1_ref_'+sid+'_r'+r);}catch(e){}
+ }renderIn();
+}
+
+function deleteGroup(grp){
+ if(!confirm('DELETE all data for '+grp+'?\nThis removes all students, submissions, decisions, and risk register data. Cannot be undone.')){return;}
+ var reg=getReg();Object.keys(reg).forEach(function(id){if(reg[id].group===grp)delete reg[id];});saveReg(reg);
+ for(var r=1;r<=5;r++){try{localStorage.removeItem('c1_subs_'+grp+'_r'+r);localStorage.removeItem('c1_gd_'+grp+'_r'+r);}catch(e){}}
+ try{localStorage.removeItem('c1_rr_'+grp);}catch(e){}
+ var all=gl('allGD',[]);sl('allGD',all.filter(function(g){return g.group!==grp;}));
+ var allRR=gl('allRR',{});delete allRR[grp];sl('allRR',allRR);
+ renderIn();renderLB();
+}
+
+function deleteAll(){
+ if(!confirm('RESET ALL DATA for Case 1?\nThis permanently deletes every student, submission, and group decision.')){return;}
+ if(!confirm('FINAL CONFIRMATION: All Case 1 data will be permanently deleted. Continue?')){return;}
+ var keys=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.startsWith('c1_'))keys.push(k);}
+ keys.forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});
+ alert('All Case 1 data has been reset.');renderIn();renderLB();
+}
+
+function renderIn(){
+ var r=RD[curRound];var reg=getReg();
+ var adminHtml='';
+ ALL_GROUPS.forEach(function(g){
+  var inGrp=Object.entries(reg).filter(function(e){return e[1].group===g;});
+  var subs=gl('subs_'+g+'_r'+curRound,[]);
+  adminHtml+='<div class="group-admin-card"><div class="group-admin-title"><h4>'+g+' — '+inGrp.length+' student(s)</h4>';
+  adminHtml+='<button class="btn btn-r" onclick="deleteGroup(\''+g+'\')" style="font-size:11px;padding:4px 10px">Delete group</button></div>';
+  if(inGrp.length===0){adminHtml+='<div style="font-size:12px;color:#6B7A8D;font-style:italic;padding:4px 0">No students registered yet.</div>';}
+  else{inGrp.forEach(function(e){
+   var sid=e[0];var si=e[1];var hasSub=subs.some(function(s){return s.id===sid;});
+   adminHtml+='<div class="student-row">'+
+    '<div class="av" style="flex-shrink:0">'+si.name.substring(0,2).toUpperCase()+'</div>'+
+    '<div style="flex:1"><strong>'+si.name+'</strong> <span style="color:#6B7A8D;font-size:11px">(ID: '+sid+')</span></div>'+
+    '<span style="font-size:10px;padding:2px 7px;border-radius:3px;font-weight:700;background:'+(hasSub?'#E1F5EE':'#FFF3CD')+';color:'+(hasSub?'#1A7A4A':'#854F0B')+'">'+
+    (hasSub?'Submitted R'+curRound:'Not submitted')+'</span>'+
+    ' <button class="del-btn" onclick="deleteStudent(\''+sid+'\',\''+g+'\')" title="Remove student">Remove</button></div>';
+  });}
+  adminHtml+='</div>';
+ });
+ var _ag=document.getElementById('adminGroups');if(_ag)_ag.innerHTML=adminHtml;
+
+ var iHtml='';
+ ALL_GROUPS.forEach(function(g){
+  var subs=gl('subs_'+g+'_r'+curRound,[]);var gd=gl('gd_'+g+'_r'+curRound,null);var rrData=gl('allRR',{})[g];
+  if(subs.length===0&&!gd&&!rrData)return;
+  var gsc=0;if(gd&&r)r.qs.forEach(function(q,i){gsc+=(q.p[gd.answers['q'+(i+1)]]||0);});
+  iHtml+='<div class="igc"><div class="igt"><span>'+g+'</span>';
+  if(gd)iHtml+='<span style="font-size:12px;background:#E1F5EE;color:#1A7A4A;padding:2px 8px;border-radius:4px;font-weight:700">Group: '+gsc+'/50 pts</span>';
+  iHtml+='</div>';
+  if(subs.length>0){
+   iHtml+='<div style="font-size:10px;font-weight:700;color:#6B7A8D;margin-bottom:5px;text-transform:uppercase">Individual ('+subs.length+')</div>';
+   subs.forEach(function(s){
+    var isc=0;if(r)r.qs.forEach(function(q,i){isc+=(q.p[s.answers['q'+(i+1)]]||0);});
+    iHtml+='<div class="imr"><span style="flex:1;font-weight:700">'+s.name+'</span><div class="ians">';
+    for(var i=1;i<=5;i++){var a=s.answers['q'+i]||'';iHtml+='<span class="mv '+(a?'v'+a:'vn')+'" style="padding:2px 8px;border-radius:3px;font-size:11px;font-weight:700">'+(a||'—')+'</span>';}
+    iHtml+='</div><span style="font-weight:700;color:#002A5C;min-width:60px;text-align:right">'+isc+' pts</span>';
+    if(s.reflection&&(s.reflection.r1||s.reflection.r2)){
+     iHtml+='<details style="width:100%;margin-top:4px"><summary style="font-size:11px;color:#6B7A8D;cursor:pointer">View reflection</summary>';
+     if(s.reflection.r1)iHtml+='<div style="font-size:11px;color:#0A1628;padding:4px 0"><strong>Difficult decision:</strong> '+s.reflection.r1+'</div>';
+     if(s.reflection.r2)iHtml+='<div style="font-size:11px;color:#0A1628;padding:4px 0"><strong>Domain &amp; tool:</strong> '+s.reflection.r2+'</div>';
+     iHtml+='</details>';
+    }iHtml+='</div>';
+   });
+  }
+  if(gd){
+   iHtml+='<div style="margin-top:7px;font-size:10px;font-weight:700;color:#6B7A8D;margin-bottom:4px;text-transform:uppercase">Group decision</div>';
+   iHtml+='<div class="imr"><span style="flex:1;font-weight:700">Final answers</span><div class="ians">';
+   for(var i=1;i<=5;i++){var a=gd.answers['q'+i]||'';iHtml+='<span class="mv '+(a?'v'+a:'vn')+'" style="padding:2px 8px;border-radius:3px;font-size:11px;font-weight:700">'+(a||'—')+'</span>';}
+   iHtml+='</div><span style="font-weight:700;color:#1A7A4A;min-width:60px;text-align:right">'+gsc+' pts</span></div>';
+  }
+  if(rrData&&rrData.rows){var cnt=rrData.rows.filter(function(row){return!row.isEx&&row.name&&row.name!=='Click Edit to name this risk';}).length;if(cnt>0)iHtml+='<div style="margin-top:5px;font-size:11px;color:#6B7A8D">Risk Register: <strong>'+cnt+' risks</strong> entered</div>';}
+  iHtml+='</div>';
+ });
+ if(!iHtml)iHtml='<div class="emp"><h4>No submissions yet</h4><p>Students appear here as they submit.</p></div>';
+ var _ig=document.getElementById('iGroups');if(_ig)_ig.innerHTML=iHtml;
+
+ var ak='';
+ if(r){r.qs.forEach(function(q,i){
+  ak+='<div style="margin-bottom:10px;padding:10px;background:#fff;border-radius:8px;border:2px solid #E0E4EA"><div style="font-size:11px;font-weight:700;color:#002A5C;margin-bottom:7px">Decision '+(i+1)+' (Correct: <strong>'+q.a+'</strong>): '+q.q+'</div>';
+  ['A','B','C','D'].forEach(function(l){
+   var pts=q.p[l];var isA=l===q.a;
+   var bg=pts===10?'#E1F5EE':pts>=7?'#EBF2FB':pts>=4?'#FFF3CD':pts===0?'#F4F6FA':'#FCEBEB';
+   var fg=pts===10?'#1A7A4A':pts>=7?'#0C447C':pts>=4?'#854F0B':pts===0?'#6B7A8D':'#C0392B';
+   ak+='<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 8px;border-radius:5px;margin-bottom:3px;'+(isA?'background:#E1F5EE;border:1px solid #1A7A4A':'')+'">'+
+    '<span style="font-weight:700;min-width:16px;color:'+(isA?'#1A7A4A':'#6B7A8D')+'">'+l+'</span>'+
+    '<span style="font-size:12px;flex:1;color:'+(isA?'#1A7A4A':'#6B7A8D')+'">'+q.o[l]+'</span>'+
+    '<span style="font-size:10px;padding:2px 7px;border-radius:3px;font-weight:700;background:'+bg+';color:'+fg+'">'+(pts>0?'+':'')+pts+' pts</span>'+
+    (isA?'<span style="font-size:10px;background:#1A7A4A;color:#fff;padding:2px 8px;border-radius:3px;font-weight:700;white-space:nowrap">BEST ANSWER</span>':'')+
+    '</div>';
+  });ak+='</div>';
+ });}
+ var akEl=document.getElementById('iAK');if(akEl)akEl.innerHTML=ak;
+}
+
+// ── Boot: call after all functions are defined ──
+window.addEventListener('DOMContentLoaded', function(){ initFirebase(); });
+</script>
+</body>
+</html>
